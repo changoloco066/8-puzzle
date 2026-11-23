@@ -3,6 +3,7 @@
 #include <set>
 #include <algorithm>
 #include <cstdlib>
+#include <random>
 
 int heuristicaFichas(const std::vector<int>& tablero, const std::vector<int>& meta){
     int contador = 0;
@@ -142,14 +143,32 @@ struct Nodo{
     int movimiento;  // ficha que se movio para llegar aca (-1 si es el inicio)
 };
 
+std::vector<int> generarEstadoAleatorio(const std::vector<int>& meta, unsigned int semilla){
+    std::vector<int> estado(meta.size());
+
+    std::mt19937 generador(semilla);
+
+    do{
+        for(std::size_t i = 0; i < estado.size(); i ++){
+            estado[i] = static_cast<int>(i);
+        }
+        std::shuffle(estado.begin(), estado.end(), generador);
+    }while(estado == meta || !esSoluble(estado, meta));
+
+    return estado;
+}
+
 int main(){
     using namespace std;
 
-    // Estado inicial clasico para la meta en espiral (283 / 164 / 7 5)
-    std::vector<int> estado = {2, 8, 3, 1, 6, 4, 7, 0, 5};
-
     // Meta: 123 / 8 4 / 765  (el 0 es el espacio vacio)
     const std::vector<int> meta = {1, 2, 3, 8, 0, 4, 7, 6, 5};
+
+    // Estado inicial generado al azar y siempre soluble.
+    // Poner una semilla fija distinta de 0 para repetir siempre el mismo puzzle.
+    const unsigned int SEMILLA_FIJA = 0;
+    unsigned int semilla = (SEMILLA_FIJA != 0) ? SEMILLA_FIJA : std::random_device{}();
+    std::vector<int> estado = generarEstadoAleatorio(meta, semilla);
 
     // Cambiar a false para usar la heuristica de piezas fuera de lugar
     const bool usarManhattan = true;
@@ -157,7 +176,8 @@ int main(){
 
     std::cout << "Heuristica: "
               << (usarManhattan ? "Manhattan" : "piezas fuera de lugar")
-              << "\n\n";
+              << '\n';
+    std::cout << "Semilla: " << semilla << "\n\n";
 
     if(!esSoluble(estado, meta)){
         std::cout << "El estado inicial no tiene solucion (paridad de inversiones).\n";
